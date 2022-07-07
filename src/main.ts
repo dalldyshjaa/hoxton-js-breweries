@@ -1,32 +1,19 @@
-const state = {
-  brewerys: [
-    {
-      address_2: null,
-      address_3: null,
-      brewery_type: "large",
-      city: "San Diego",
-      country: "United States",
-      county_province: null,
-      created_at: "2018-07-24T00:00:00.000Z",
-      id: 8041,
-      latitude: "32.714813",
-      longitude: "-117.129593",
-      name: "10 Barrel Brewing Co",
-      obdb_id: "10-barrel-brewing-co-san-diego",
-      phone: "6195782311",
-      postal_code: "92101-6618",
-      state: "California",
-      street: "1501 E St",
-      updated_at: "2018-08-23T00:00:00.000Z",
-      website_url: "http://10barrel.com",
-    },
-  ],
+let state = {
+  currentState: "",
+  brewery: "",
+  breweries: [],
 };
-createBrewery(state.brewerys[0]);
+document
+  .querySelector("#select-state-form")
+  .addEventListener("submit", (event) => {
+    event.preventDefault();
+    let input = document.querySelector("#select-state");
+    state.brewery = "";
+    state.currentState = input.value;
+    getTheBreweries();
+  });
+render();
 function createBrewery(brewery) {
-  let article = document.createElement("article");
-  let ul = document.createElement("ul");
-  ul.className = "breweries-list";
   let li = document.createElement("li");
   let breweryName = document.createElement("h2");
   breweryName.textContent = brewery.name;
@@ -54,12 +41,58 @@ function createBrewery(brewery) {
   link.href = brewery.website_url;
   link.target = "_blank";
   link.textContent = "Visit Website";
-  article.appendChild(ul);
-  ul.appendChild(li);
+  document.querySelector(".breweries-list").appendChild(li);
   li.append(breweryName, breweryType, addressSec, phoneSec, linkSec);
   addressSec.append(addressTitle, address1, address2);
   address2.appendChild(address3);
   phoneSec.append(phone, phone1);
   linkSec.appendChild(link);
-  document.querySelector("main")?.appendChild(article);
+}
+function preRenderThings() {
+  let title = document.createElement("h1");
+  title.textContent = "List of Breweries";
+  let header = document.createElement("header");
+  header.className = "search-bar";
+  let input = document.createElement("input");
+  input.id = "search-breweries";
+  input.name = "search-breweries";
+  input.type = "text";
+  let form = document.createElement("form");
+  form.id = "search-breweries-form";
+  form.autocomplete = "off";
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    state.brewery = input.value;
+    getTheBreweries();
+  });
+  let label = document.createElement("label");
+  label.innerHTML = "<h2>Search breweries:</h2>";
+  let article = document.createElement("article");
+  let ul = document.createElement("ul");
+  ul.className = "breweries-list";
+  article.appendChild(ul);
+  header.appendChild(form);
+  form.append(label, input);
+  document.querySelector("main")?.append(title, header, article);
+}
+
+function getTheBreweries() {
+  let url =
+    state.brewery.length == 0
+      ? `https://api.openbrewerydb.org/breweries?by_state=${state.currentState}&per_page=10`
+      : `https://api.openbrewerydb.org/breweries?by_name=${state.brewery}&by_state=${state.currentState}`;
+  fetch(url)
+    .then((respo) => respo.json())
+    .then((breweries) => {
+      state.breweries = breweries;
+      console.log(breweries);
+      render();
+    });
+}
+function render() {
+  document.querySelector("main").textContent = "";
+  preRenderThings();
+  for (let brewery of state.breweries) {
+    createBrewery(brewery);
+  }
 }
